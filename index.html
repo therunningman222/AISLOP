@@ -3,10 +3,91 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Spaceship You</title>
+<title>Spaceship You — Prototype</title>
+<style>
+:root{--bg:#0b1020;--card:#151c30;--muted:#94a3b8;--text:#f8fafc;--line:#26314a;--accent:#7dd3fc;--danger:#fb7185;--warn:#fbbf24;--good:#4ade80}
+*{box-sizing:border-box}body{margin:0;background:linear-gradient(180deg,#0b1020,#111827);color:var(--text);font:16px system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+.app{max-width:760px;margin:auto;padding:20px 16px 90px}.top{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:20px}
+h1{font-size:28px;margin:0}.sub,.small{color:var(--muted)}.sub{margin-top:4px}
+.card{background:rgba(21,28,48,.96);border:1px solid var(--line);border-radius:18px;padding:18px;margin:14px 0;box-shadow:0 8px 30px #0002}
+.hero{border-color:#28506a;background:linear-gradient(135deg,#122235,#151c30)}h2{margin-top:0}.mission{font-size:20px;font-weight:700;margin:10px 0}
+button{border:0;border-radius:12px;padding:11px 14px;font-weight:700;background:var(--accent);color:#062033;cursor:pointer}
+button.secondary{background:#202a41;color:var(--text);border:1px solid var(--line)}
+button.danger{background:#3a1822;color:#fecdd3;border:1px solid #6b2637}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.room{padding:14px;border-radius:14px;border:1px solid var(--line);background:#111827}
+.room .name{font-weight:700}.status{font-size:13px;margin-top:5px}.red{color:var(--danger)}.yellow{color:var(--warn)}.green{color:var(--good)}
+.task{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--line)}.task:last-child{border-bottom:0}.task input{width:20px;height:20px}
+.task.done{opacity:.45;text-decoration:line-through}
+.tabs{display:flex;gap:8px;position:sticky;bottom:12px;background:#0b1020dd;padding:8px;border:1px solid var(--line);border-radius:16px;backdrop-filter:blur(10px)}
+.tabs button{flex:1;background:#151c30;color:var(--muted);border:1px solid var(--line)}.tabs button.active{background:var(--accent);color:#062033}
+.hidden{display:none}input[type=text],select{width:100%;background:#0f172a;color:var(--text);border:1px solid var(--line);border-radius:10px;padding:11px;margin:6px 0 12px}
+.modal{position:fixed;inset:0;background:#0009;z-index:20;padding:20px;overflow:auto}.modal .card{max-width:560px;margin:10vh auto;background:#151c30}
+@media(max-width:520px){.grid{grid-template-columns:1fr}.top{align-items:flex-start;flex-direction:column}}
+</style>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0b1020">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Spaceship You">
 </head>
 <body>
-<p>Spaceship You files are being installed. Please refresh.</p>
-<script>location.replace('./spaceship/index.html');</script>
-</body>
-</html>
+<div class="app">
+  <div class="top">
+    <div><h1>🚀 Spaceship You</h1><div class="sub">Keep the ship operational.</div></div>
+    <button id="modeBtn" class="secondary" onclick="openAwayOrReentry()">🏠 Home</button>
+  </div>
+  <section id="homeView">
+    <div id="reentryCard" class="card hidden"></div>
+    <div class="card hero">
+      <h2 id="greeting">Welcome back, Captain.</h2>
+      <p id="summary">One mission at a time. Keep the ship operational.</p>
+      <div class="mission" id="missionText"></div><div class="small" id="missionTime"></div>
+      <br><button onclick="completeMission()">✓ Launch mission</button>
+    </div>
+    <div class="card"><h2>Ship status</h2><p class="small">Condition rises as tasks age. Open a room to see its systems.</p><div class="grid" id="rooms"></div><div id="roomDetail" class="card hidden" style="margin-top:14px;background:#0f172a"></div></div>
+    <div class="card"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><h2 style="margin:0">All systems</h2><button onclick="openAddTask()">＋ Add task</button></div><div id="tasks"></div></div>
+  </section>
+  <section id="awayView" class="hidden"><div class="card"><h2>🛫 Preparing for launch</h2><p>Secure the ship before you leave. The app won't treat time away as missed chores.</p><label>How long will you be away?</label><select id="awayLength"><option value="2">A couple of days</option><option value="7">About a week</option><option value="21">A few weeks</option><option value="60">A month or more</option></select><div id="shutdownTasks"></div><br><button onclick="launchAway()">🚀 Secure ship & go</button></div></section>
+  <section id="settingsView" class="hidden"><div class="card"><h2>⚙️ Ship settings</h2><p class="small">Prototype data is saved in this browser.</p><label>Your name</label><input id="nameInput" type="text" value="Captain"><button onclick="saveName()">Save</button><br><br><button class="danger" onclick="resetShip()">Reset prototype</button></div></section>
+  <div id="taskModal" class="modal hidden"><div class="card"><div style="display:flex;justify-content:space-between;align-items:center"><h2>Add a task</h2><button class="secondary" onclick="closeAddTask()">✕</button></div><label>What needs doing?</label><input id="newName" type="text" placeholder="e.g. Clean the oven"><label>Where?</label><select id="newRoom"><option>Kitchen</option><option>Bathroom</option><option>Bedroom</option><option>Living room</option><option>Laundry</option><option>Waste</option><option>Floors</option><option>Admin</option><option>Other</option></select><label>Type</label><select id="newType" onchange="toggleFrequency()"><option value="recurring">Recurring</option><option value="once">Just this once</option></select><div id="frequencyBox"><label>Normally needs doing every...</label><select id="newDays"><option value="1">Day</option><option value="3">3 days</option><option value="7" selected>Week</option><option value="14">2 weeks</option><option value="30">Month</option><option value="60">2 months</option><option value="90">3 months</option></select></div><label>How quickly does it decay?</label><select id="newDecay"><option value="veryfast">🚨 Very fast — hours</option><option value="fast">🔴 Fast — days</option><option value="medium" selected>🟠 Medium — around a week</option><option value="slow">🟡 Slow — weeks</option><option value="veryslow">🟢 Very slow — months</option></select><label>How long does it take?</label><select id="newTime"><option value="5 min">5 min</option><option value="10 min" selected>10 min</option><option value="15 min">15 min</option><option value="20 min">20 min</option><option value="30 min">30 min</option><option value="1 hour">1 hour</option></select><button onclick="addTask()">Add to ship</button></div></div>
+  <div class="tabs"><button class="active" onclick="showView('homeView',this)">🚀 Ship</button><button onclick="showView('awayView',this)">🛫 Away</button><button onclick="showView('settingsView',this)">⚙️ Settings</button></div>
+</div>
+<script>
+const DECAY={veryfast:{label:'Very fast',half:0.25},fast:{label:'Fast',half:1},medium:{label:'Medium',half:4},slow:{label:'Slow',half:10},veryslow:{label:'Very slow',half:30}};
+const defaultTasks=[{id:1,room:'Laundry',name:'Do a load of washing',days:2,weight:10,done:false,time:'10 min active',type:'recurring',decay:'fast'},{id:2,room:'Kitchen',name:'Deal with dishes',days:1,weight:9,done:false,time:'10 min',type:'recurring',decay:'veryfast'},{id:3,room:'Kitchen',name:'Clear worktops',days:3,weight:6,done:false,time:'10 min',type:'recurring',decay:'medium'},{id:4,room:'Waste',name:'Take bins/recycling out',days:4,weight:7,done:false,time:'5 min',type:'recurring',decay:'fast'},{id:5,room:'Bathroom',name:'Clean bathroom',days:7,weight:5,done:false,time:'20 min',type:'recurring',decay:'medium'},{id:6,room:'Bedroom',name:'Change bedding',days:14,weight:4,done:false,time:'10 min',type:'recurring',decay:'slow'},{id:7,room:'Floors',name:'Vacuum main areas',days:7,weight:4,done:false,time:'15 min',type:'recurring',decay:'medium'},{id:8,room:'Kitchen',name:'Food/fridge check',days:30,weight:5,done:false,time:'10 min',type:'recurring',decay:'veryslow'},{id:9,room:'Living room',name:'10-minute reset',days:2,weight:3,done:false,time:'10 min',type:'recurring',decay:'fast'}];
+let tasks=loadTasks(),away=JSON.parse(localStorage.getItem('spaceshipAway')||'null'),name=localStorage.getItem('spaceshipName')||'Captain';
+function loadTasks(){let raw=localStorage.getItem('spaceshipTasks'),arr=raw?JSON.parse(raw):JSON.parse(JSON.stringify(defaultTasks));arr.forEach(t=>{if(!t.type)t.type='recurring';if(!t.decay)t.decay='medium';if(t.type==='recurring'&&!t.lastDone)t.lastDone=Date.now()-((t.days||7)*0.65*86400000)});return arr}
+function save(){localStorage.setItem('spaceshipTasks',JSON.stringify(tasks));localStorage.setItem('spaceshipAway',JSON.stringify(away))}
+function ageDays(t){if(t.type==='once')return t.done?0:Infinity;if(!t.lastDone)return t.days||7;return Math.max(0,(Date.now()-t.lastDone)/86400000)}
+function condition(t){if(t.type==='once')return t.done?0:100;const p=DECAY[t.decay]||DECAY.medium,a=ageDays(t),raw=100*(1-Math.exp(-Math.log(2)*a/p.half)),f=t.days?Math.min(1.6,Math.max(.45,7/t.days)):1;return Math.min(100,Math.round(raw*f))}
+function score(t){if(t.done)return-1;const c=condition(t),effort=parseInt((t.time.match(/\d+/)||['10'])[0],10),bonus=Math.max(0,20-effort)/20*5;return c+(t.weight||0)+bonus}
+function priority(){return tasks.filter(t=>!t.done).sort((a,b)=>score(b)-score(a))[0]||null}
+function conditionLabel(c){if(c>=90)return['red','Critical'];if(c>=60)return['yellow','Needs attention'];return['green','Operational']}
+function statusFor(room){const a=tasks.filter(t=>t.room===room&&!t.done);return a.length?conditionLabel(Math.max(...a.map(condition))):['green','Operational']}
+function esc(v){return String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function render(){document.getElementById('greeting').textContent=away?'Welcome home, '+name+'.':'Welcome back, '+name+'.';document.getElementById('summary').textContent=away?'Your ship has been unattended. Re-entry is ready.':'One mission at a time. Keep the ship operational.';const p=priority();document.getElementById('missionText').textContent=p?p.name:'🎉 All systems operational';document.getElementById('missionTime').textContent=p?'Estimated effort: '+p.time:'Nothing urgent. Enjoy your day.';const rooms=[...new Set(tasks.map(t=>t.room))];document.getElementById('rooms').innerHTML=rooms.map(r=>{const st=statusFor(r),count=tasks.filter(t=>t.room===r&&!t.done).length;return `<button class="room" onclick="showRoom('${esc(r)}')"><div class="name">${esc(r)}</div><div class="status ${st[0]}">● ${st[1]}</div><div class="small">${count} active task${count===1?'':'s'} · tap to view</div></button>`}).join('');document.getElementById('tasks').innerHTML=tasks.map(t=>{const c=condition(t),st=t.type==='once'?'One-off':(c>=90?'Critical':c>=60?'Needs attention':'Operational'),d=t.type==='recurring'?(DECAY[t.decay]||DECAY.medium).label+' decay':'';return `<div class="task ${t.done?'done':''}"><input type="checkbox" ${t.done?'checked':''} onchange="toggleTask(${t.id})"><div style="flex:1"><b>${esc(t.name)}</b><div class="small">${esc(t.room)} · ${esc(t.time)} · ${st}${t.type==='recurring'?' · '+c+'% · '+d:''}</div></div></div>`}).join('');document.getElementById('shutdownTasks').innerHTML=['Do the dishes','Empty bins','Remove food that will spoil','Put away clean clothes','Quick bathroom clean'].map(x=>`<div class="task"><input type="checkbox"><div>${x}</div></div>`).join('');document.getElementById('nameInput').value=name;document.getElementById('modeBtn').textContent=away?'🛬 Re-entry':'🏠 Home';renderReentry()}
+function showRoom(room){const p=document.getElementById('roomDetail'),a=tasks.filter(t=>t.room===room&&!t.done),st=statusFor(room);p.classList.remove('hidden');p.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center"><div><h3 style="margin:0">${esc(room)}</h3><div class="status ${st[0]}">● ${st[1]}</div></div><button class="secondary" onclick="closeRoom()">Close</button></div>${a.length?a.map(t=>{const c=condition(t),s=t.type==='once'?'One-off':(c>=90?'Critical':c>=60?'Needs attention':'Operational'),d=t.type==='recurring'?(DECAY[t.decay]||DECAY.medium).label+' decay':'';return `<div class="task"><input type="checkbox" onchange="toggleTask(${t.id});showRoom('${esc(room)}')"><div style="flex:1"><b>${esc(t.name)}</b><div class="small">${esc(t.time)} · ${s}${t.type==='recurring'?' · '+c+'% · '+d:''}</div></div></div>`}).join(''):'<p class="small">Nothing needs doing in here. 🚀</p>'}<br><button onclick="openAddTaskForRoom('${esc(room)}')">＋ Add task to ${esc(room)}</button>`}
+function closeRoom(){document.getElementById('roomDetail').classList.add('hidden')}
+function completeMission(){const p=priority();if(!p)return;if(p.type==='once')tasks=tasks.filter(t=>t.id!==p.id);else p.lastDone=Date.now();save();render()}
+function toggleTask(id){const t=tasks.find(x=>x.id===id);if(!t)return;if(t.type==='once')t.done=!t.done;else t.lastDone=Date.now();save();render()}
+function openAddTask(){document.getElementById('taskModal').classList.remove('hidden');document.getElementById('newName').focus()}
+function closeAddTask(){document.getElementById('taskModal').classList.add('hidden')}
+function openAddTaskForRoom(room){openAddTask();document.getElementById('newRoom').value=room}
+function toggleFrequency(){document.getElementById('frequencyBox').style.display=document.getElementById('newType').value==='recurring'?'block':'none'}
+function addTask(){const n=document.getElementById('newName').value.trim();if(!n){alert('Give the task a name first.');return}const type=document.getElementById('newType').value,room=document.getElementById('newRoom').value,time=document.getElementById('newTime').value,decay=document.getElementById('newDecay').value,days=type==='recurring'?Number(document.getElementById('newDays').value):1;tasks.push({id:Date.now(),room,name:n,days,weight:type==='once'?8:4,done:false,time,type,decay,lastDone:type==='recurring'?Date.now():null});save();closeAddTask();document.getElementById('newName').value='';render()}
+function showView(id,btn){['homeView','awayView','settingsView'].forEach(x=>document.getElementById(x).classList.toggle('hidden',x!==id));document.querySelectorAll('.tabs button').forEach(b=>b.classList.remove('active'));if(btn)btn.classList.add('active')}
+function openAwayOrReentry(){showView(away?'homeView':'awayView',document.querySelectorAll('.tabs button')[away?0:1]);if(away)renderReentry()}
+function launchAway(){away={date:new Date().toISOString(),plannedDays:Number(document.getElementById('awayLength').value)};save();alert('Ship secured. Have a good trip, Captain.');showView('homeView',document.querySelector('.tabs button'));render()}
+function awayDays(){return away&&away.date?Math.max(0,Math.floor((Date.now()-new Date(away.date).getTime())/86400000)):0}
+function reentryItems(){if(!away)return[];const d=awayDays(),items=[],add=(name,time,reason,id)=>items.push({name,time,reason,id});if(tasks.some(t=>t.room==='Laundry'&&!t.done))add('Start travel washing','10 min','Get clothes from the trip moving','laundry');add('Check food & fridge','10 min','Make sure nothing spoiled while you were away','food');if(tasks.some(t=>t.room==='Waste'&&!t.done))add('Deal with bins / recycling','5 min','Clear anything left before departure','waste');if(d>=7)add('Fresh bedding','10 min','Make the first night home comfortable','bedding');if(d>=14)add('Quick bathroom reset','20 min','Bring the bathroom back to ready state','bathroom');if(d>=14)add('Vacuum main areas','15 min','Reset settled dust after a longer absence','floors');const p=priority();if(p&&!items.some(x=>x.name===p.name))add(p.name,p.time,'Highest current ship condition','task:'+p.id);return items.slice(0,5)}
+function renderReentry(){const card=document.getElementById('reentryCard');if(!away){card.classList.add('hidden');return}const d=awayDays(),items=reentryItems();card.classList.remove('hidden');card.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:flex-start"><div><h2 style="margin:0 0 6px">🛬 Welcome home, ${esc(name)}.</h2><p style="margin:0;color:#cbd5e1">You've been away for ${d} day${d===1?'':'s'}.</p></div><button class="secondary" onclick="dismissReentry()">×</button></div><h3>Re-entry sequence</h3>${items.length?items.map((x,i)=>`<div class="task"><div style="width:28px;height:28px;border-radius:50%;background:#202a41;display:grid;place-items:center;font-weight:700">${i+1}</div><div style="flex:1"><b>${esc(x.name)}</b><div class="small">${esc(x.time)} · ${esc(x.reason)}</div></div><button onclick="completeReentry(${i})">Done</button></div>`).join(''):'<p class="small">The ship looks good. No special re-entry work needed.</p>'}<br><button class="secondary" onclick="dismissReentry()">Finish re-entry</button>`}
+function completeReentry(i){const x=reentryItems()[i];if(!x)return;if(x.id&&String(x.id).startsWith('task:')){const id=Number(String(x.id).split(':')[1]),t=tasks.find(t=>t.id===id);if(t)t.lastDone=Date.now()}else if(['laundry','waste','bathroom','floors','bedding'].includes(x.id)){const map={laundry:t=>t.room==='Laundry',waste:t=>t.room==='Waste',bathroom:t=>t.room==='Bathroom',floors:t=>t.room==='Floors',bedding:t=>t.name.toLowerCase().includes('bedding')};const t=tasks.find(t=>!t.done&&map[x.id](t));if(t)t.lastDone=Date.now()}save();render()}
+function dismissReentry(){away=null;save();render()}
+function saveName(){name=document.getElementById('nameInput').value.trim()||'Captain';localStorage.setItem('spaceshipName',name);render()}
+function resetShip(){if(confirm('Reset the prototype to the starting state?')){localStorage.clear();location.reload()}}
+render();
+</script>
+<script>if('serviceWorker'in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}))}</script>
+</body></html>
