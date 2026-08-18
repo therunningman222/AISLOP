@@ -14,10 +14,11 @@ function addDeleteButtons(){
       e.preventDefault();
       e.stopPropagation();
       if(!confirm('Delete this task?')) return;
-      const stored=JSON.parse(localStorage.getItem('spaceshipTasks')||'[]');
-      const updated=stored.filter(t=>String(t.id)!==String(id));
-      localStorage.setItem('spaceshipTasks',JSON.stringify(updated));
-      location.reload();
+      const t=tasks.find(x=>String(x.id)===String(id));
+      if(!t)return;
+      tasks=tasks.filter(x=>String(x.id)!==String(id));
+      save();
+      render();
     };
     task.appendChild(btn);
   });
