@@ -3,4 +3,5 @@
 if (typeof DECAY !== 'undefined' && DECAY.veryfast) {
   DECAY.veryfast.half = 8 / 24;
   DECAY.veryfast.label = 'Very fast';
+  if (typeof render === 'function') render();
 }
