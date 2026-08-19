@@ -11,8 +11,8 @@ function sortAllSystemsByPriority(){const container=document.getElementById('tas
 function refreshTaskOrder(){requestAnimationFrame(sortAllSystemsByPriority)}
 function roomAverage(room){const active=tasks.filter(t=>t.room===room&&!t.done);return active.length?Math.round(active.reduce((sum,t)=>sum+condition(t),0)/active.length):0}
 function addRoomAverages(){document.querySelectorAll('#rooms .room').forEach(btn=>{const nameEl=btn.querySelector('.name'),status=btn.querySelector('.status');if(!nameEl||!status)return;const room=nameEl.textContent.trim();let avg=status.querySelector('.room-average');const active=tasks.filter(t=>t.room===room&&!t.done);if(!active.length){if(avg)avg.remove();return}if(!avg){avg=document.createElement('span');avg.className='room-average';status.appendChild(avg)}avg.textContent=' · '+roomAverage(room)+'%'})}
-function addTaskPercentages(){return}
+function addTaskPercentages(){document.querySelectorAll('.task').forEach(row=>{const cb=row.querySelector('input[onchange*="toggleTask("]');if(!cb)return;const m=cb.getAttribute('onchange').match(/toggleTask\((\d+)\)/);if(!m)return;const t=tasks.find(x=>Number(x.id)===Number(m[1]));if(!t||t.type!=='once')return;let el=row.querySelector('.task-condition');if(!el){el=document.createElement('span');el.className='task-condition';el.style.marginLeft='6px';const meta=row.querySelector('.small');if(meta)meta.appendChild(el);else row.appendChild(el)}el.textContent=' · '+condition(t)+'%';});}
 function updateTaskModalForType(){ensureDueDateUI()}
-function runEnhancements(){addEditButtons();addCarRoom();restoreRecurringCheckboxes();refreshTaskOrder();addRoomAverages();ensureDueDateUI()}
+function runEnhancements(){addEditButtons();addCarRoom();restoreRecurringCheckboxes();refreshTaskOrder();addRoomAverages();addTaskPercentages();ensureDueDateUI()}
 runEnhancements();const typeSelect=document.getElementById('newType');if(typeSelect)typeSelect.addEventListener('change',updateTaskModalForType);const originalRender=window.render;if(originalRender){window.render=function(){originalRender();runEnhancements()}}
-setInterval(()=>{sortAllSystemsByPriority();addRoomAverages()},30000);
+setInterval(()=>{sortAllSystemsByPriority();addRoomAverages();addTaskPercentages()},30000);
