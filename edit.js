@@ -58,30 +58,32 @@ window.condition=function(t){
   const f=t.days?Math.min(1.6,Math.max(.45,7/t.days)):1;
   return Math.min(100,Math.round(raw*f));
 };
-const spaceshipOriginalAddTask=window.addTask;
-if(typeof spaceshipOriginalAddTask==='function' && !spaceshipOriginalAddTask.__creationFixed){
-  const wrappedAddTask=function(){
-    const beforeIds=new Set(tasks.map(t=>String(t.id)));
-    const result=spaceshipOriginalAddTask.apply(this,arguments);
-    const fresh=tasks.filter(t=>!beforeIds.has(String(t.id)) && t.type==='recurring');
-    const now=Date.now();
-    fresh.forEach(t=>{t.done=false;t.lastDone=now-((t.days||7)*0.65*86400000);});
-    if(fresh.length){localStorage.setItem('spaceshipTasks',JSON.stringify(tasks));if(typeof pushCloud==='function')pushCloud();}
-    render();
-    return result;
-  };
-  wrappedAddTask.__creationFixed=true; window.addTask=wrappedAddTask;
-}
+
+/* Replace the original addTask instead of wrapping it. Wrapping caused two cloud
+   writes: the first saved lastDone=now, then the correction saved an older value.
+   Those requests could arrive out of order and make a brand-new task look completed. */
+window.addTask=function(){
+  const n=document.getElementById('newName').value.trim();
+  if(!n){alert('Give the task a name first.');return;}
+  const type=document.getElementById('newType').value;
+  const room=document.getElementById('newRoom').value;
+  const time=document.getElementById('newTime').value;
+  const decay=document.getElementById('newDecay').value;
+  const days=type==='recurring'?Number(document.getElementById('newDays').value):1;
+  const task={id:Date.now(),room,name:n,days,weight:type==='once'?8:4,done:false,time,type,decay,lastDone:type==='recurring'?Date.now()-((days||7)*0.65*86400000):null};
+  tasks.push(task);
+  save();
+  closeAddTask();
+  document.getElementById('newName').value='';
+  render();
+};
+
 function sortAllSystemsByPriority(){
   const container=document.getElementById('tasks');
   if(!container) return;
   const rows=[...container.querySelectorAll(':scope > .task')];
   if(rows.length<2) return;
-  const priority=row=>{
-    const text=row.textContent||'';
-    const m=text.match(/(\d{1,3})%/);
-    return m?Number(m[1]):-1;
-  };
+  const priority=row=>{const text=row.textContent||'';const m=text.match(/(\d{1,3})%/);return m?Number(m[1]):-1;};
   rows.sort((a,b)=>priority(b)-priority(a));
   rows.forEach(row=>container.appendChild(row));
 }
