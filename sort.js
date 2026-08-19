@@ -1,17 +1,25 @@
 function sortAllSystemsByPriority(){
   const container=document.getElementById('tasks');
-  if(!container || typeof tasks==='undefined' || typeof score!=='function') return;
+  if(!container) return;
   const rows=[...container.querySelectorAll(':scope > .task')];
   if(rows.length<2) return;
-  const idOf=row=>{const cb=row.querySelector('input[onchange*="toggleTask("]');const m=cb&&cb.getAttribute('onchange').match(/toggleTask\((\d+)\)/);return m?Number(m[1]):null};
-  const rank=new Map(tasks.map(t=>[Number(t.id),score(t)]));
-  rows.sort((a,b)=>{
-    const sa=rank.get(idOf(a))??-1,sb=rank.get(idOf(b))??-1;
-    return sb-sa;
-  });
-  const current=rows.map(idOf).join(',');
-  const existing=[...container.children].map(idOf).join(',');
-  if(current!==existing) rows.forEach(row=>container.appendChild(row));
+  // The list should always show the most decayed/urgent task first.
+  // Sort from the percentage currently displayed in each row, so this
+  // stays aligned with exactly what the user sees regardless of which
+  // scoring implementation is active.
+  const priority=row=>{
+    const text=row.textContent||'';
+    const matches=[...text.matchAll(/(?:^|\s)(\d{1,3})%/g)];
+    return matches.length?Number(matches[0][1]):-1;
+  };
+  rows.sort((a,b)=>priority(b)-priority(a));
+  rows.forEach(row=>container.appendChild(row));
 }
-sortAllSystemsByPriority();
-new MutationObserver(()=>requestAnimationFrame(sortAllSystemsByPriority)).observe(document.getElementById('tasks')||document.body,{childList:true});
+
+function runPrioritySort(){
+  requestAnimationFrame(()=>sortAllSystemsByPriority());
+}
+
+runPrioritySort();
+new MutationObserver(runPrioritySort).observe(document.getElementById('tasks')||document.body,{childList:true,subtree:true});
+setInterval(sortAllSystemsByPriority,30000);
