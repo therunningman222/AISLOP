@@ -48,7 +48,6 @@ function restoreRecurringCheckboxes(){
     row.classList.toggle('done',cb.checked);
   });
 }
-/* Very-fast decay should mean roughly a one-day cycle, not instant critical status. */
 const spaceshipOriginalCondition=window.condition;
 window.condition=function(t){
   if(t.type==='once')return t.done?0:100;
@@ -59,8 +58,6 @@ window.condition=function(t){
   const f=t.days?Math.min(1.6,Math.max(.45,7/t.days)):1;
   return Math.min(100,Math.round(raw*f));
 };
-/* New recurring tasks are not completed when created. Give them a neutral starting age
-   so the recent-completion visual state cannot mistake creation for a completion. */
 const spaceshipOriginalAddTask=window.addTask;
 if(typeof spaceshipOriginalAddTask==='function' && !spaceshipOriginalAddTask.__creationFixed){
   const wrappedAddTask=function(){
@@ -75,6 +72,21 @@ if(typeof spaceshipOriginalAddTask==='function' && !spaceshipOriginalAddTask.__c
   };
   wrappedAddTask.__creationFixed=true; window.addTask=wrappedAddTask;
 }
-addEditButtons(); addCarRoom(); restoreRecurringCheckboxes();
-const originalRender=window.render; if(originalRender){window.render=function(){originalRender();restoreRecurringCheckboxes();};}
-new MutationObserver(()=>{addEditButtons();addCarRoom();restoreRecurringCheckboxes();}).observe(document.body,{childList:true,subtree:true});
+function sortAllSystemsByPriority(){
+  const container=document.getElementById('tasks');
+  if(!container) return;
+  const rows=[...container.querySelectorAll(':scope > .task')];
+  if(rows.length<2) return;
+  const priority=row=>{
+    const text=row.textContent||'';
+    const m=text.match(/(\d{1,3})%/);
+    return m?Number(m[1]):-1;
+  };
+  rows.sort((a,b)=>priority(b)-priority(a));
+  rows.forEach(row=>container.appendChild(row));
+}
+function refreshTaskOrder(){requestAnimationFrame(sortAllSystemsByPriority);}
+addEditButtons(); addCarRoom(); restoreRecurringCheckboxes(); refreshTaskOrder();
+const originalRender=window.render; if(originalRender){window.render=function(){originalRender();restoreRecurringCheckboxes();refreshTaskOrder();};}
+new MutationObserver(()=>{addEditButtons();addCarRoom();restoreRecurringCheckboxes();refreshTaskOrder();}).observe(document.body,{childList:true,subtree:true});
+setInterval(sortAllSystemsByPriority,30000);
