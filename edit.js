@@ -50,5 +50,22 @@ function resetTaskModal(){
 }
 const originalCloseAddTask=window.closeAddTask;
 window.closeAddTask=function(){if(originalCloseAddTask)originalCloseAddTask();resetTaskModal();};
+
+function addCarRoom(){
+  const select=document.getElementById('newRoom');
+  if(select && ![...select.options].some(o=>o.value==='Car')){
+    const option=document.createElement('option');
+    option.value='Car'; option.textContent='Car'; select.appendChild(option);
+  }
+  const rooms=document.getElementById('rooms');
+  if(rooms && ![...rooms.querySelectorAll('.room .name')].some(n=>n.textContent==='Car')){
+    const btn=document.createElement('button');
+    btn.className='room';
+    btn.onclick=()=>showRoom('Car');
+    btn.innerHTML='<div class="name">Car</div><div class="status green">● Operational</div><div class="small">0 active tasks · tap to view</div>';
+    rooms.appendChild(btn);
+  }
+}
 addEditButtons();
-new MutationObserver(addEditButtons).observe(document.body,{childList:true,subtree:true});
+addCarRoom();
+new MutationObserver(()=>{addEditButtons();addCarRoom();}).observe(document.body,{childList:true,subtree:true});
