@@ -6,89 +6,47 @@ function addEditButtons(){
     if(!match) return;
     const id=match[1];
     const btn=document.createElement('button');
-    btn.className='edit-task secondary';
-    btn.textContent='✏️'; btn.title='Edit task'; btn.style.cssText='padding:8px 10px;flex-shrink:0';
+    btn.className='edit-task secondary'; btn.textContent='✏️'; btn.title='Edit task'; btn.style.cssText='padding:8px 10px;flex-shrink:0';
     btn.onclick=(e)=>{e.preventDefault();e.stopPropagation();openEditTask(Number(id));};
     const del=task.querySelector('.delete-task'); task.insertBefore(btn,del||null);
   });
 }
 function openEditTask(id){
   const t=tasks.find(x=>x.id===id); if(!t)return;
-  document.getElementById('taskModal').classList.remove('hidden');
-  document.querySelector('#taskModal h2').textContent='Edit task';
-  document.getElementById('newName').value=t.name||'';
-  document.getElementById('newRoom').value=t.room||'Other';
-  document.getElementById('newType').value=t.type||'recurring';
-  document.getElementById('newDays').value=String(t.days||7);
-  document.getElementById('newDecay').value=t.decay||'medium';
-  document.getElementById('newTime').value=t.time||'10 min'; toggleFrequency();
+  document.getElementById('taskModal').classList.remove('hidden'); document.querySelector('#taskModal h2').textContent='Edit task';
+  document.getElementById('newName').value=t.name||''; document.getElementById('newRoom').value=t.room||'Other'; document.getElementById('newType').value=t.type||'recurring';
+  document.getElementById('newDays').value=String(t.days||7); document.getElementById('newDecay').value=t.decay||'medium'; document.getElementById('newTime').value=t.time||'10 min'; toggleFrequency();
   const add=document.querySelector('#taskModal button[onclick="addTask()"]'); add.textContent='Save changes'; add.onclick=()=>saveEditedTask(id);
 }
 function saveEditedTask(id){
-  const t=tasks.find(x=>x.id===id); if(!t)return;
-  const n=document.getElementById('newName').value.trim(); if(!n){alert('Give the task a name first.');return;}
-  const oldType=t.type; t.name=n; t.room=document.getElementById('newRoom').value; t.type=document.getElementById('newType').value;
-  t.days=t.type==='recurring'?Number(document.getElementById('newDays').value):1; t.decay=document.getElementById('newDecay').value; t.time=document.getElementById('newTime').value;
+  const t=tasks.find(x=>x.id===id); if(!t)return; const n=document.getElementById('newName').value.trim(); if(!n){alert('Give the task a name first.');return;}
+  const oldType=t.type; t.name=n; t.room=document.getElementById('newRoom').value; t.type=document.getElementById('newType').value; t.days=t.type==='recurring'?Number(document.getElementById('newDays').value):1; t.decay=document.getElementById('newDecay').value; t.time=document.getElementById('newTime').value;
   if(t.type==='recurring' && (!t.lastDone || oldType==='once')) t.lastDone=Date.now(); save(); closeAddTask(); resetTaskModal(); render();
 }
 function resetTaskModal(){document.querySelector('#taskModal h2').textContent='Add a task';const add=document.querySelector('#taskModal button[onclick="addTask()"]');if(add){add.textContent='Add to ship';add.onclick=()=>addTask();}}
 const originalCloseAddTask=window.closeAddTask; window.closeAddTask=function(){if(originalCloseAddTask)originalCloseAddTask();resetTaskModal();};
 function addCarRoom(){
-  const select=document.getElementById('newRoom');
-  if(select && ![...select.options].some(o=>o.value==='Car')){const option=document.createElement('option');option.value='Car';option.textContent='Car';select.appendChild(option);}
-  const rooms=document.getElementById('rooms');
-  if(rooms && ![...rooms.querySelectorAll('.room .name')].some(n=>n.textContent==='Car')){const btn=document.createElement('button');btn.className='room';btn.onclick=()=>showRoom('Car');btn.innerHTML='<div class="name">Car</div><div class="status green">● Operational</div><div class="small">0 active tasks · tap to view</div>';rooms.appendChild(btn);}
+  const select=document.getElementById('newRoom'); if(select && ![...select.options].some(o=>o.value==='Car')){const option=document.createElement('option');option.value='Car';option.textContent='Car';select.appendChild(option);}
+  const rooms=document.getElementById('rooms'); if(rooms && ![...rooms.querySelectorAll('.room .name')].some(n=>n.textContent==='Car')){const btn=document.createElement('button');btn.className='room';btn.onclick=()=>showRoom('Car');btn.innerHTML='<div class="name">Car</div><div class="status green">● Operational</div><div class="small">0 active tasks · tap to view</div>';rooms.appendChild(btn);}
 }
 function restoreRecurringCheckboxes(){
-  document.querySelectorAll('.task').forEach(row=>{
-    const cb=row.querySelector('input[onchange*="toggleTask("]'); if(!cb)return;
-    const m=cb.getAttribute('onchange').match(/toggleTask\((\d+)\)/); if(!m)return;
-    const t=tasks.find(x=>Number(x.id)===Number(m[1])); if(!t || t.type!=='recurring')return;
-    cb.checked=!!t.lastDone && (Date.now()-Number(t.lastDone) < 12*60*60*1000);
-    row.classList.toggle('done',cb.checked);
-  });
+  document.querySelectorAll('.task').forEach(row=>{const cb=row.querySelector('input[onchange*="toggleTask("]');if(!cb)return;const m=cb.getAttribute('onchange').match(/toggleTask\((\d+)\)/);if(!m)return;const t=tasks.find(x=>Number(x.id)===Number(m[1]));if(!t||t.type!=='recurring')return;cb.checked=!!t.lastDone&&(Date.now()-Number(t.lastDone)<12*60*60*1000);row.classList.toggle('done',cb.checked);});
 }
 const spaceshipOriginalCondition=window.condition;
 window.condition=function(t){
-  if(t.type==='once')return t.done?0:100;
-  const p=DECAY[t.decay]||DECAY.medium;
-  const a=ageDays(t);
-  const raw=100*(1-Math.exp(-Math.log(2)*a/p.half));
-  if(t.decay==='veryfast') return Math.min(100,Math.round(raw));
-  const f=t.days?Math.min(1.6,Math.max(.45,7/t.days)):1;
-  return Math.min(100,Math.round(raw*f));
+  if(t.type==='once')return t.done?0:100; const p=DECAY[t.decay]||DECAY.medium,a=ageDays(t),raw=100*(1-Math.exp(-Math.log(2)*a/p.half)); if(t.decay==='veryfast')return Math.min(100,Math.round(raw)); const f=t.days?Math.min(1.6,Math.max(.45,7/t.days)):1; return Math.min(100,Math.round(raw*f));
 };
-
-/* Replace the original addTask instead of wrapping it. Wrapping caused two cloud
-   writes: the first saved lastDone=now, then the correction saved an older value.
-   Those requests could arrive out of order and make a brand-new task look completed. */
 window.addTask=function(){
-  const n=document.getElementById('newName').value.trim();
-  if(!n){alert('Give the task a name first.');return;}
-  const type=document.getElementById('newType').value;
-  const room=document.getElementById('newRoom').value;
-  const time=document.getElementById('newTime').value;
-  const decay=document.getElementById('newDecay').value;
-  const days=type==='recurring'?Number(document.getElementById('newDays').value):1;
-  const task={id:Date.now(),room,name:n,days,weight:type==='once'?8:4,done:false,time,type,decay,lastDone:type==='recurring'?Date.now()-((days||7)*0.65*86400000):null};
-  tasks.push(task);
-  save();
-  closeAddTask();
-  document.getElementById('newName').value='';
-  render();
+  const n=document.getElementById('newName').value.trim(); if(!n){alert('Give the task a name first.');return;} const type=document.getElementById('newType').value,room=document.getElementById('newRoom').value,time=document.getElementById('newTime').value,decay=document.getElementById('newDecay').value,days=type==='recurring'?Number(document.getElementById('newDays').value):1;
+  const task={id:Date.now(),room,name:n,days,weight:type==='once'?8:4,done:false,time,type,decay,lastDone:type==='recurring'?Date.now()-((days||7)*0.65*86400000):null}; tasks.push(task); save(); closeAddTask(); document.getElementById('newName').value=''; render();
 };
-
-function sortAllSystemsByPriority(){
-  const container=document.getElementById('tasks');
-  if(!container) return;
-  const rows=[...container.querySelectorAll(':scope > .task')];
-  if(rows.length<2) return;
-  const priority=row=>{const text=row.textContent||'';const m=text.match(/(\d{1,3})%/);return m?Number(m[1]):-1;};
-  rows.sort((a,b)=>priority(b)-priority(a));
-  rows.forEach(row=>container.appendChild(row));
-}
+function sortAllSystemsByPriority(){const container=document.getElementById('tasks');if(!container)return;const rows=[...container.querySelectorAll(':scope > .task')];if(rows.length<2)return;const priority=row=>{const m=(row.textContent||'').match(/(\d{1,3})%/);return m?Number(m[1]):-1;};rows.sort((a,b)=>priority(b)-priority(a));rows.forEach(row=>container.appendChild(row));}
 function refreshTaskOrder(){requestAnimationFrame(sortAllSystemsByPriority);}
-addEditButtons(); addCarRoom(); restoreRecurringCheckboxes(); refreshTaskOrder();
-const originalRender=window.render; if(originalRender){window.render=function(){originalRender();restoreRecurringCheckboxes();refreshTaskOrder();};}
-new MutationObserver(()=>{addEditButtons();addCarRoom();restoreRecurringCheckboxes();refreshTaskOrder();}).observe(document.body,{childList:true,subtree:true});
-setInterval(sortAllSystemsByPriority,30000);
+function roomAverage(room){const active=tasks.filter(t=>t.room===room&&!t.done);return active.length?Math.round(active.reduce((sum,t)=>sum+condition(t),0)/active.length):0;}
+function addRoomAverages(){
+  document.querySelectorAll('#rooms .room').forEach(btn=>{const nameEl=btn.querySelector('.name');if(!nameEl)return;const room=nameEl.textContent.trim();const status=btn.querySelector('.status');if(!status)return;const old=status.querySelector('.room-average');if(old)old.remove();if(tasks.some(t=>t.room===room&&!t.done)){const avg=document.createElement('span');avg.className='room-average';avg.textContent=' · '+roomAverage(room)+'%';status.appendChild(avg);}});
+}
+addEditButtons(); addCarRoom(); restoreRecurringCheckboxes(); refreshTaskOrder(); addRoomAverages();
+const originalRender=window.render; if(originalRender){window.render=function(){originalRender();restoreRecurringCheckboxes();refreshTaskOrder();addRoomAverages();};}
+new MutationObserver(()=>{addEditButtons();addCarRoom();restoreRecurringCheckboxes();refreshTaskOrder();addRoomAverages();}).observe(document.body,{childList:true,subtree:true});
+setInterval(()=>{sortAllSystemsByPriority();addRoomAverages();},30000);
