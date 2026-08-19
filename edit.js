@@ -48,8 +48,7 @@ function restoreRecurringCheckboxes(){
     row.classList.toggle('done',cb.checked);
   });
 }
-/* Very-fast decay should mean roughly a one-day cycle, not instant critical status.
-   The old frequency multiplier made daily tasks hit 100% after only a few hours. */
+/* Very-fast decay should mean roughly a one-day cycle, not instant critical status. */
 const spaceshipOriginalCondition=window.condition;
 window.condition=function(t){
   if(t.type==='once')return t.done?0:100;
@@ -60,6 +59,22 @@ window.condition=function(t){
   const f=t.days?Math.min(1.6,Math.max(.45,7/t.days)):1;
   return Math.min(100,Math.round(raw*f));
 };
+/* New recurring tasks are not completed when created. Give them a neutral starting age
+   so the recent-completion visual state cannot mistake creation for a completion. */
+const spaceshipOriginalAddTask=window.addTask;
+if(typeof spaceshipOriginalAddTask==='function' && !spaceshipOriginalAddTask.__creationFixed){
+  const wrappedAddTask=function(){
+    const beforeIds=new Set(tasks.map(t=>String(t.id)));
+    const result=spaceshipOriginalAddTask.apply(this,arguments);
+    const fresh=tasks.filter(t=>!beforeIds.has(String(t.id)) && t.type==='recurring');
+    const now=Date.now();
+    fresh.forEach(t=>{t.done=false;t.lastDone=now-((t.days||7)*0.65*86400000);});
+    if(fresh.length){localStorage.setItem('spaceshipTasks',JSON.stringify(tasks));if(typeof pushCloud==='function')pushCloud();}
+    render();
+    return result;
+  };
+  wrappedAddTask.__creationFixed=true; window.addTask=wrappedAddTask;
+}
 addEditButtons(); addCarRoom(); restoreRecurringCheckboxes();
 const originalRender=window.render; if(originalRender){window.render=function(){originalRender();restoreRecurringCheckboxes();};}
 new MutationObserver(()=>{addEditButtons();addCarRoom();restoreRecurringCheckboxes();}).observe(document.body,{childList:true,subtree:true});
