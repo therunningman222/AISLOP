@@ -48,6 +48,18 @@ function restoreRecurringCheckboxes(){
     row.classList.toggle('done',cb.checked);
   });
 }
+/* Very-fast decay should mean roughly a one-day cycle, not instant critical status.
+   The old frequency multiplier made daily tasks hit 100% after only a few hours. */
+const spaceshipOriginalCondition=window.condition;
+window.condition=function(t){
+  if(t.type==='once')return t.done?0:100;
+  const p=DECAY[t.decay]||DECAY.medium;
+  const a=ageDays(t);
+  const raw=100*(1-Math.exp(-Math.log(2)*a/p.half));
+  if(t.decay==='veryfast') return Math.min(100,Math.round(raw));
+  const f=t.days?Math.min(1.6,Math.max(.45,7/t.days)):1;
+  return Math.min(100,Math.round(raw*f));
+};
 addEditButtons(); addCarRoom(); restoreRecurringCheckboxes();
 const originalRender=window.render; if(originalRender){window.render=function(){originalRender();restoreRecurringCheckboxes();};}
 new MutationObserver(()=>{addEditButtons();addCarRoom();restoreRecurringCheckboxes();}).observe(document.body,{childList:true,subtree:true});
