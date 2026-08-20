@@ -11,6 +11,7 @@ function sortAllSystemsByPriority(){const container=document.getElementById('tas
 function refreshTaskOrder(){requestAnimationFrame(sortAllSystemsByPriority)}
 function roomAverage(room){const active=tasks.filter(t=>t.room===room&&!t.done);return active.length?Math.round(active.reduce((sum,t)=>sum+condition(t),0)/active.length):0}
 function addRoomAverages(){document.querySelectorAll('#rooms .room').forEach(btn=>{const nameEl=btn.querySelector('.name'),status=btn.querySelector('.status');if(!nameEl||!status)return;const room=nameEl.textContent.trim();let avg=status.querySelector('.room-average');const active=tasks.filter(t=>t.room===room&&!t.done);if(!active.length){if(avg)avg.remove();return}if(!avg){avg=document.createElement('span');avg.className='room-average';status.appendChild(avg)}avg.textContent=' · '+roomAverage(room)+'%'})}
+window.statusFor=function(room){const active=tasks.filter(t=>t.room===room&&!t.done);return active.length?conditionLabel(roomAverage(room)):['green','Operational']};
 function updateTaskModalForType(){ensureDueDateUI()}
 function runEnhancements(){addEditButtons();addCarRoom();restoreRecurringCheckboxes();refreshTaskOrder();addRoomAverages();addTaskPercentages();ensureDueDateUI()}
 runEnhancements();const typeSelect=document.getElementById('newType');if(typeSelect)typeSelect.addEventListener('change',updateTaskModalForType);const originalRender=window.render;if(originalRender){window.render=function(){originalRender();runEnhancements()}}
