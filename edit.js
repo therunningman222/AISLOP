@@ -15,4 +15,5 @@ window.statusFor=function(room){const active=tasks.filter(t=>t.room===room&&!t.d
 function updateTaskModalForType(){ensureDueDateUI()}
 function runEnhancements(){addEditButtons();addCarRoom();restoreRecurringCheckboxes();refreshTaskOrder();addRoomAverages();addTaskPercentages();ensureDueDateUI()}
 runEnhancements();const typeSelect=document.getElementById('newType');if(typeSelect)typeSelect.addEventListener('change',updateTaskModalForType);const originalRender=window.render;if(originalRender){window.render=function(){originalRender();runEnhancements()}}
+const originalShowRoom=window.showRoom;if(originalShowRoom){window.showRoom=function(room){originalShowRoom(room);requestAnimationFrame(()=>addTaskPercentages())}}
 setInterval(()=>{sortAllSystemsByPriority();addRoomAverages();addTaskPercentages()},30000);
