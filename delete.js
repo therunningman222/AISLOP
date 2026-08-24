@@ -25,3 +25,24 @@ function addDeleteButtons(){
 }
 addDeleteButtons();
 new MutationObserver(addDeleteButtons).observe(document.body,{childList:true,subtree:true});
+
+// Away mode pause: recurring tasks do not accumulate decay while the ship is away.
+// Tasks can still be completed normally while away; if completed during the trip,
+// their new lastDone timestamp starts their next cycle from that completion time.
+const conditionBeforeAwayPause=window.condition;
+window.condition=function(t){
+  if(t.type==='once') return conditionBeforeAwayPause(t);
+  const p=DECAY[t.decay]||DECAY.medium;
+  const now=Date.now();
+  const lastDone=Number(t.lastDone)||now;
+  let elapsed=now-lastDone;
+  if(away&&away.date){
+    const awayStart=new Date(away.date).getTime();
+    const pauseStart=Math.max(lastDone,awayStart);
+    if(now>pauseStart) elapsed-=now-pauseStart;
+  }
+  const a=Math.max(0,elapsed/86400000);
+  const raw=100*(1-Math.exp(-Math.log(2)*a/p.half));
+  const f=t.days?Math.min(1.6,Math.max(.45,7/t.days)):1;
+  return Math.min(100,Math.round(raw*f));
+};
